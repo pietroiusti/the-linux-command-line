@@ -1,0 +1,579 @@
+* Chapter 6. Redirection
+Normally: keyboard (stdin) --> program ---> screen (stdout, stderr)
+
+I/O redirection allows us to change that.
+** Redirecting Standard Output
+Redirecting stdout:
+#+begin_src bash
+  ls -l /usr/bin > ls-output.txt
+#+end_src
+
+Redirecting stdout (appending):
+#+begin_src bash
+  ls -l /usr/bin >> ls-output.txt
+#+end_src
+** Redirecting Standard Error
+Redirecting stderr:
+#+begin_src bash
+  ls -l /bin/usr 2> ls-error.txt
+#+end_src
+
+Redirecting both stdout and stderr to one file (good old way):
+#+begin_src bash
+  ls -l /usr/bin > ls-output.txt 2>&1
+#+end_src
+Newer way:
+#+begin_src bash
+  ls -l /usr/bin &> ls-output.txt
+#+end_src
+
+Appending both stdout and stderr to one file:
+#+begin_src bash
+  ls -l /usr/bin &>> ls-output.txt
+#+end_src
+Shotts does not say what the old way of doing this would be. Is it the
+following?
+#+begin_src bash
+  ls -l /usr/bin >> ls-output.txt 2>>&1
+#+end_src
+** Throw Output Away
+To disregard an output we can use the special /dev/null file
+(so-called bit bucket):
+#+begin_src bash
+  ls -l /bin/usr 2> /dev/null
+#+end_src
+** Redirecting Standard Input
+Using a file as a source of stdin:
+#+begin_src bash
+  cat < file-with-some-text.txt
+#+end_src
+** Piping
+#+begin_src bash
+  ls -l /usr/bin | less
+#+end_src
+
+#+begin_src bash
+  ls /bin /usr/bin | sort | less
+#+end_src
+** uniq
+uniq removes duplicates
+#+begin_src bash
+  ls /bin /usr/bin | sort | uniq | less
+#+end_src
+If we want to see the list of duplicates:
+#+begin_src bash
+  ls /bin /usr/bin | sort | uniq -d | less
+#+end_src
+** wc
+#+begin_src bash
+  ls /bin /usr/bin | sort | uniq | wc -l
+#+end_src
+** grep
+#+begin_src bash
+  ls /bin /usr/bin | sort | uniq | grep zip
+#+end_src
+** head/tail
+#+begin_src bash
+  head -n 5 ls-output.txt
+#+end_src
+#+begin_src bash
+  tail -n 5 ls-output.txt
+#+end_src
+tail can be used in pipelines:
+#+begin_src bash
+  ls /usr/bin | tail -n 5
+#+end_src
+tail can be used to view files in real time:
+#+begin_src bash
+  tail -f /var/log/messages
+#+end_src
+** tee
+tee reads from stdin and copies it to both standard output and to one
+or more files:
+#+begin_src bash
+  ls /usr/bin | tee ls.txt | grep zip
+#+end_src
+* Chapter 10. Processes
+Modern operating systems create the /illusion/ of doing more than one
+thing at once, by rapidly switching from one executing program to
+another. This is achieved through the kernel's management of
+/processes/. Processes are how Linux organizes the different programs
+waiting for their turn at the CPU.
+
+Parent process / child process.
+
+PID: PIDs are assigned in ascending order. init is 1.
+
+Like files, processes have owners, user IDS, etc.
+** Viewing Process
+#+begin_src bash
+  ps
+#+end_src
+
+Will give us:
+#+begin_src bash
+  PID TTY          TIME CMD
+  25621 pts/6    00:00:00 bash
+  101436 pts/6    00:00:00 ps
+#+end_src
+
+TTY: the controlling terminal for the process.
+TIME: the amount of CPU time consumed by the process.
+
+Bigger picture:
+#+begin_src bash
+  ps x
+#+end_src
+
+#+begin_src bash
+  PID TTY      STAT   TIME COMMAND
+  474 ?        Ss     0:00 /usr/lib/systemd/systemd --user
+  475 ?        S      0:00 (sd-pam)
+  482 tty1     Ss     0:00 -bash
+  504 tty1     S+     0:00 xinit -- vt01
+  505 tty1     Sl    94:57 /usr/lib/Xorg :0 vt01
+  510 tty1     Sl    47:30 emacs -l /home/gp/.emacs.d/init-exwm.el
+  513 ?        Ssl    0:23 emacs --daemon
+#+end_src
+STAT: the current status of the project.
+
+- Process states:
+  - R ...
+  - S ...
+  - T ...
+  - Z ...
+  - < ...
+  - N ...
+
+Seeing more info:
+#+begin_src bash
+  ps aux
+#+end_src
+- We can now see:
+  - USER ...
+  - %CPU  ...
+  - %MEM  ...
+  - VSZ  ...
+  - RSS  ...
+  - START  ...
+** Viewing processes dynamically
+#+begin_src bash
+  top
+#+end_src
+~top~ shows a system summary and a table of processes sorted by CPU
+activity.
+** Controlling Processes
+#+begin_src bash
+xlogo &
+#+end_src
+If we run
+#+begin_src bash
+  ps
+#+end_src
+now we get:
+#+begin_src bash
+ PID TTY          TIME CMD
+ 101522 pts/8    00:00:00 bash
+ 103880 pts/8    00:00:00 xlogo
+ 103917 pts/8    00:00:00 ps
+#+end_src
+
+With jobs we can see the list of jobs that have been launched from our terminal:
+#+begin_src bash
+  jobs
+#+end_src
+#+begin_src bash
+  [1]+  Running                 xlogo &
+#+end_src
+To return xlogo to the foreground:
+#+begin_src bash
+  fg %1
+#+end_src
+
+We can stop a process with ~Ctrl-z~ (the program will thereby go in
+the background).
+
+Once we have stopped a process we can continue its execution in the
+foreground by using ~fg~, or resume its execution in the background with ~bg~.
+** Signals
+~kill~ can be used to terminate a process.
+
+You can pass to ~kill~ the PID but also the jobspec (for exampl, %1).
+
+More precisely, ~kill~ does really ``kill'' a process; it sends a
+/signal/ to it. Signals one of the way in which the operating system
+communicates with programs.
+
+Actually we have already used signals with we have used Ctrl-c and
+Ctrl-z. In those cases, the terminal receives the keystrokes and sends
+a signal to the program in the foreground. In the case of Ctrl-C, INT
+(interrupt) is sent. In the case of Ctrl-z, TSTP (terminal stop) is
+sent. Programs listen for signals and act upon signals to do things.
+
+The most common syntax of ~kill~ is:
+#+begin_src bash
+  kill -signal PID...
+#+end_src
+
+If no signal is specified, then TERM (terminate) is sent by default.
+
+- Common signals:
+  - HUP ...
+  - INT ...
+  - KILL ...
+  - TERM ...
+  - CONT ...
+  - STOP ...
+  - TSTP ...
+  - QUIT
+  - SEGV
+  - WINCH
+
+killing multiple processes:
+#+begin_quote
+killall [-u user] [-signal] name...
+#+end_quote
+
+- Some other important commands:
+  - pstree
+  - vmstat
+  - xload
+  - tload
+* Chapter 24. Writing Your First Script
+Save hello_world in ~/bin/:
+
+#+begin_src bash
+  #!/bin/bash
+
+  echo 'Hello world'
+#+end_src
+
+#+begin_src bash
+  chmod 755 hello_world
+#+end_src
+
+Now you can execute it:
+#+begin_src bash
+  ./hello_world
+#+end_src
+
+If you want to execute it just by typing ~hello_world~, then it must
+be in one folder included by the PATH variable. To print the value of
+the PATH variable:
+#+begin_src bash
+  echo $PATH
+#+end_src
+
+Usually ~/bin is included. If it's not, let's include it, so we can
+start putting our scripts in it, and executing them just by typing
+their name. ~/bin is a good place for script intended for personal
+use.
+
+~/usr/local/bin is a standard place for scripts that are intended for
+everyone to use them.
+
+System administrators often put their scripts in /usr/bin/sbin.
+
+``Locally supplied software'' is usually in the /usr/local hierarchy.
+* Chapter 25.
+#+begin_src bash
+  #!/bin/bash
+
+  # Program to output a system of information page
+
+  TITLE="System Information Report For $HOSTNAME"
+  CURRENT_TIME="$(date +"%x %r %Z")"
+  TIMESTAMP="Generated $CURRENT_TIME, by $USER"
+
+  cat << _EOF_
+  <html>
+       <head>
+            <title>$TITLE</title>
+       </head>
+       <body>
+            <h1>$TITLE</h1>
+            <p>$TIMESTAMP</p>
+       </body>
+  </html>
+  _EOF_   
+#+end_src
+* Chapter 26
+#+begin_quote
+Top-down design is a common method of designing programs and one that
+is well suited to shell programming in particular.
+#+end_quote
+
+#+begin_src bash
+  #!/bin/bash
+  # Program to output a system information page
+  TITLE="System Information Report For $HOSTNAME"
+  CURRENT_TIME="$(date +"%x %r %Z")"
+  TIMESTAMP="Generated $CURRENT_TIME, by $USER"
+  report_uptime () {
+      cat <<- _EOF_
+              <h2>System Uptime</h2>
+              <pre>$(uptime)</pre>
+              _EOF_
+      return
+  }
+  report_disk_space () {
+      cat <<- _EOF_
+              <h2>Disk Space Utilization</h2>
+              <pre>$(df -h)</pre>
+              _EOF_
+      return
+  }
+  report_home_space () {
+      cat <<- _EOF_
+              <h2>Home Space Utilization</h2>
+              <pre>$(du -sh /home/*)</pre>
+              _EOF_
+      return
+  }
+  cat << _EOF_
+  <html>
+    <head>
+      <title>$TITLE</title>
+    </head>
+    <body>
+      <h1>$TITLE</h1>
+      <p>$TIMESTAMP</p>
+      $(report_uptime)
+      $(report_disk_space)
+      $(report_home_space)
+    </body>
+  </html>
+  _EOF_
+#+end_src
+* Chapter 27
+#+begin_src bash
+  #!/bin/bash
+
+  # test-file: Evaluate the status of a file
+
+  FILE=~/.bashrc
+
+  if [ -e "$FILE" ]; then
+      if [ -f "$FILE" ]; then
+          echo "$FILE is a regular file."
+      fi
+      if [ -d "$FILE" ]; then
+          echo "$FILE is a directory."
+      fi
+      if [ -r "$FILE" ]; then
+          echo "$FILE is readable."
+      fi
+      if [ -w "$FILE" ]; then
+          echo "$FILE is writable."
+      fi
+      if [ -x "$FILE" ]; then
+          echo "$FILE is executable/searchable."
+      fi
+  else
+      echo "$FILE does not exist"
+      exit 1
+  fi
+
+  exit
+#+end_src
+
+As a function it would have been:
+#+begin_src bash
+  test_file () {
+
+      # test-file: Evaluate the status of a file
+
+      FILE=~/.bashrc
+
+      if [ -e "$FILE" ]; then
+          if [ -f "$FILE" ]; then
+              echo "$FILE is a regular file."
+          fi
+          if [ -d "$FILE" ]; then
+              echo "$FILE is a directory."
+          fi
+          if [ -r "$FILE" ]; then
+              echo "$FILE is readable."
+          fi
+          if [ -w "$FILE" ]; then
+              echo "$FILE is writable."
+          fi
+          if [ -x "$FILE" ]; then
+              echo "$FILE is executable/searchable."
+          fi
+      else
+          echo "$FILE does not exist"
+          return 1
+      fi
+  }
+#+end_src
+
+#+begin_src bash
+  #!/bin/bash
+
+  # test-string: evaluate the value of a string
+
+  ANSWER=maybe
+
+  if [ -z "$ANSWER" ]; then
+      echo "There is no answer." >&2
+      exit 1
+  fi
+
+  if [ "$ANSWER" = "yes" ]; then
+      echo "The answer is YES."
+  elif [ "$ANSWER" = "no" ]; then
+      echo "The answer is NO."
+  elif [ "$ANSWER" = "maybe" ]; then
+      echo "The answer is MAYBE."
+  else
+      echo "The answer is UNKNOWN."
+  fi  
+#+end_src
+
+#+begin_src bash
+  #!/bin/bash
+
+  # test-integer: evaluate the value of an integer.
+
+  INT=-5
+
+  if [ -z "$INT" ]; then
+      echo "INT is empty." >&2
+      exit 1
+  fi
+
+  if [ "$INT" -eq 0 ]; then
+      echo "INT is zero."
+  else
+      if [ "$INT" -lt 0 ]; then
+          echo "INT is negative."
+      else
+          echo "INT is positive."
+      fi
+      if [ $((INT % 2)) -eq 0 ]; then
+          echo "INT is even."
+      else
+          echo "INT is odd."
+      fi
+  fi
+#+end_src
+
+Using a regular expression to limit the value of INT to strings that
+are whole numers only:
+#+begin_src bash
+  #!/bin/bash
+  # test-integer2: evaluate the value of an integer.
+  INT=-5
+  if [[ "$INT" =~ ^-?[0-9]+$ ]]; then
+      if [ "$INT" -eq 0 ]; then
+          echo "INT is zero."
+      else
+          if [ "$INT" -lt 0 ]; then
+              echo "INT is negative."
+          else
+              echo "INT is positive."
+          fi
+          if [ $((INT % 2)) -eq 0 ]; then
+              echo "INT is even."
+          else
+              echo "INT is odd."
+          fi
+      fi
+  else
+      echo "INT is not an integer." >&2
+      exit 1
+  fi
+#+end_src
+
+Using (( )):
+#+begin_src bash
+  #!/bin/bash
+
+  # test-integer2a: evaluate the value of an integer.
+
+  INT=-5
+
+  if [[ "$INT" =~ ^-?[0-9]+$ ]]; then
+      if ((INT == 0)); then
+          echo "INT is zero."
+      else
+          if ((INT < 0)); then
+              echo "INT is negative."
+          else
+              echo "INT is positive."
+          fi
+          if (( ((INT % 2)) == 0)); then
+              echo "INT is even."
+          else
+              echo "INT is odd."
+          fi
+      fi
+  else
+      echo "INT is not an integer." >&2
+      exit 1
+  fi
+#+end_src
+
+#+begin_src bash
+  #!/bin/bash
+
+  # test-integer3: determine if an integer is within a
+  # specified range of values.
+
+  MIN_VAL=1
+  MAX_VAL=100
+
+  INT=50
+
+  if [[ "$INT" =~ ^-?[0-9]+$ ]]; then
+      if [[ "$INT" -ge "$MIN_VAL" && "$INT" -le "$MAX_VAL" ]]; then
+          echo "$INT is within $MIN_VAL to $MAX_VAL."
+      else
+          echo "$INT is out of range."
+      fi
+  else
+      echo "INT is not an integer." >&2
+      exit 1
+  fi
+#+end_src
+We could alternatively have said:
+#+begin_src bash
+  if [ "$INT" -ge "$MIN_VAL" -a "$INT" -le "$MAX_VAL" ]; then
+      echo "$INT is within $MIN_VAL to $MAX_VAL."
+  else
+      echo "$INT is out of range."
+  fi
+#+end_src
+
+#+begin_src bash
+  #!/bin/bash
+
+  # test-integer4: determine if an integer is outside a
+  # specified range of values.
+
+  MIN_VAL=1
+  MAX_VAL=100
+
+  INT=50
+
+  if [[ "$INT" =~ ^-?[0-9]+$ ]]; then
+      if [[ ! ("$INT" -ge "$MIN_VAL" && "$INT" -le "$MAX_VAL") ]]; then
+          echo "$INT is outside $MIN_VAL to $MAX_VAL."
+      else
+          echo "$INT is in range."
+      fi
+  else
+      echo "INT is not an integer." >&2
+      exit 1
+  fi
+#+end_src
+
+Using test would have been like that:
+#+begin_src bash
+  if [ ! \( "$INT" -ge "$MIN_VAL" -a "$INT" -le "$MAX_VAL" \) ]; then
+      echo "$INT is outside $MIN_VAL to $MAX_VAL."
+  else
+      echo "$INT is in range."
+  fi
+#+end_src
