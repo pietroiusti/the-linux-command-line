@@ -1,3 +1,68 @@
+* Chapter 1. What is the shell?
+- ~date~
+
+- ~cal~
+
+- ~df~: see the amount of free space on disk drives.
+
+- ~free~: see the amount of free memory.
+
+- ~exit~ (or C-d): end the terminal session.
+
+* Chapter 2. Navigation
+- ~pwd~
+
+- ~ls~
+
+- ~cd~
+
+- Relative and absolut path names.
+
+* Chapter 3. Exploring the system
+- Commands are often followed by one or more /options/ and
+  /arguments/.
+  #+begin_src bash
+    command -shortOptions arguments
+    command --longOptions arguments
+  #+end_src
+- ~file~
+  #+begin_src bash
+   $gp file bar.sh
+   bar.sh: Bourne-Again shell script, ASCII text executable
+  #+end_src
+- ~less~
+- symbolic links (aka soft links, aka symlinks).
+* Chapter 4. Manipulating files and directories
+- ~cp~
+- ~mv~
+- ~mkdir~
+- ~rm~
+- ~ls~
+* Chapter 5. Working with commands
+- With `command' we can mean four different things:
+  1. An executable program;
+  2. A command built into the shell itself (/shell builtins/);
+  3. A shell function (incorporated into the /environment/);
+  4. An alias.
+
+- ~type~ tells you the the kind of a command.
+
+- ~which~ tells you the exact location of an executable.
+
+- ~help~
+
+- ~--help~
+
+- ~man~
+
+- ~apropos~
+
+- ~whatis~
+
+- ~info~
+
+- ~alias~ / ~unalias~
+
 * Chapter 6. Redirection
 Normally: keyboard (stdin) --> program ---> screen (stdout, stderr)
 
@@ -18,7 +83,13 @@ Redirecting stderr:
   ls -l /bin/usr 2> ls-error.txt
 #+end_src
 
-Redirecting both stdout and stderr to one file (good old way):
+Why that '2'? That's the number of the file descriptor of the standard
+error. We are using a shell notation that allows us to use that
+number. To redirect the standard output we could have said '1>'
+instead of '>'.
+
+How to redirecting both stdout and stderr to one file?  There are two
+ways. The good old way:
 #+begin_src bash
   ls -l /usr/bin > ls-output.txt 2>&1
 #+end_src
@@ -36,6 +107,13 @@ following?
 #+begin_src bash
   ls -l /usr/bin >> ls-output.txt 2>>&1
 #+end_src
+
+Also: Shotts does not say it, but I gather that the way to redirect
+--- /mutatis mutandis/ for appending --- stdout to one fine and stderr
+to a different file is:
+#+begin_src bash
+  ls -l /usr/bin > ls-output.txt 2> ls-error.txt
+#+end_src
 ** Throw Output Away
 To disregard an output we can use the special /dev/null file
 (so-called bit bucket):
@@ -43,10 +121,24 @@ To disregard an output we can use the special /dev/null file
   ls -l /bin/usr 2> /dev/null
 #+end_src
 ** Redirecting Standard Input
-Using a file as a source of stdin:
+~cat~ reads one or more files and copies them to stdout.
+
+However, if ~cat~ is given not arguments, it reads from stdin.
+
+This feature can be used to write short files:
+#+begin_src bash
+  $  cat > foo.txt
+  hello there.
+CTRL-D
+#+end_src
+
+Given that ~cat~ accepts stanrdard input, we can redirect it:
 #+begin_src bash
   cat < file-with-some-text.txt
 #+end_src
+This gives the same result of the result we got when passing the file
+nume as an argument (``cat file-with-some-text.txt'').
+
 ** Piping
 #+begin_src bash
   ls -l /usr/bin | less
@@ -55,6 +147,13 @@ Using a file as a source of stdin:
 #+begin_src bash
   ls /bin /usr/bin | sort | less
 #+end_src
+
+*`>' and `|' should not be confused*. `>' (redirection operator)
+ ``connects a command with a file''. `|' (pipeline operator) connects
+ the output of one command with the input of another command. In
+ particular, it should be rememberd that the redirection operator
+ silently creates and overwrites files... that can have destructive
+ effects.
 ** uniq
 uniq removes duplicates
 #+begin_src bash
@@ -88,8 +187,8 @@ tail can be used to view files in real time:
   tail -f /var/log/messages
 #+end_src
 ** tee
-tee reads from stdin and copies it to both standard output and to one
-or more files:
+~tee~ is a very useful command. It reads from stdin /and/ copies it to
+both standard output and to one or more files:
 #+begin_src bash
   ls /usr/bin | tee ls.txt | grep zip
 #+end_src
@@ -295,7 +394,7 @@ System administrators often put their scripts in /usr/bin/sbin.
             <p>$TIMESTAMP</p>
        </body>
   </html>
-  _EOF_   
+  _EOF_
 #+end_src
 * Chapter 26
 #+begin_quote
@@ -428,7 +527,7 @@ As a function it would have been:
       echo "The answer is MAYBE."
   else
       echo "The answer is UNKNOWN."
-  fi  
+  fi
 #+end_src
 
 #+begin_src bash
@@ -576,4 +675,154 @@ Using test would have been like that:
   else
       echo "$INT is in range."
   fi
+#+end_src
+* Chapter 28
+#+begin_src bash
+  #!/bin/bash
+
+  # read-integer: evaluate the value of an integer
+
+  echo -n "Please enter an integer -> "
+  read int
+
+  if [[ "$int" =~ ^-?[0-9]+$ ]]; then
+      if [ "$int" -eq 0 ]; then
+          echo "$int is zero."
+      else
+          if [ "$int" -lt 0 ]; then
+              echo "$int is negative."
+          else
+              echo "$int is positive."
+          fi
+          if [ $((int % 2)) -eq 0 ]; then
+              echo "$int is even."
+          else
+              echo "$int is odd."
+          fi
+      fi
+  else
+      echo "Input value is not an integer." >&2
+      exit 1
+  fi
+#+end_src
+
+#+begin_src bash
+  #!bin/bash
+
+  # read-multiple: read multiple values from keyboard
+
+  echo -n "Enter one or more values > "
+  read var1 var2 var3 var4 var5
+
+  echo "var1 = '$var1'"
+  echo "var2 = '$var2'"
+  echo "var3 = '$var3'"
+  echo "var4 = '$var4'"
+  echo "var5 = '$var5'"
+#+end_src
+
+#+begin_src bash
+  #!/bin/bash
+
+  # read-single: read multiple values into default variable
+
+  echo -n "Enter one or more values > "
+  read
+
+  echo "REPLY = '$REPLY'"
+#+end_src
+
+Using the -p option:
+#+begin_src bash
+  #!/bin/bash
+
+  # read-single: read multiple values into default variable
+
+  read -p "Enter one or more values > "e
+
+  echo "REPLY = '$REPLY'"
+#+end_src
+
+Using the -t and -e options:
+#+begin_src bash
+  #!/bin/bash
+
+  # read-secret: input a secret passphrase
+
+  if read -t 10 -sp "Enter secret passphrase > " secret_pass; then
+      echo -e "\nSecret passphrase = '$secret_pass'"
+  else
+      echo -e "\nInput timed out" >&2
+      exit 1
+#+end_src
+
+To supply a default response using the -e and -i options together:
+#+begin_src bash
+  #!/bin/bash
+
+  # read-default: supply a default value if user presses Enter key
+
+  read -e -p "What is your user name? " -i $USER
+  echo "You answered: '$REPLY'"
+#+end_src
+The one above is the example given by Shotts. But it seems wrong to
+me. In fact, if one enters an input the answer will be $USER+input.
+
+Here is a working solution:
+#+begin_src bash
+  #!/bin/bash
+
+  # read-default: supply a default value if user presses Enter key.
+
+  read -p "What is your user name? " username
+  REPLY=${username:-$USER}
+  echo "You answered: '$REPLY'"
+#+end_src
+
+Reading the content of ~/etc/passwd~ by changing the value of IFS and
+``here strings'':
+#+begin_src bash
+  #!/bin/bash
+
+  # read-ifs: read-fields from a file
+
+  FILE=/etc/passwd
+
+  read -p "Enter a username > " user_name
+
+  file_info="$(grep "$^user_name:" $FILE)"
+
+  if [ -n "$file_info" ]; then
+      IFS=":" read user pw uid gid name home shell <<< "$file_info"
+      echo "User = 		'$user'"
+      echo "UID = 		'$uid'"
+      echo "GID = 		'$GID"
+      echo "Full Name = 	'$name"
+      echo "Home Dir. = 	'$home"
+      echo "Shell = 		'$shell"
+  else
+      echo "No such user '$user_name'" >&2
+      exit 1
+  fi
+#+end_src
+* Chapter 29
+#+begin_src bash
+  #!/bin/bash
+
+  # while-count: display a series of numbers
+
+  count=1
+
+  while [[ "$count" -le 5 ]]; do
+      echo "$count"
+      count=$((count + 1))
+
+  done
+  echo "Finished"
+#+end_src
+
+#+begin_src bash
+  continue
+
+  break
 #+end_src
