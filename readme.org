@@ -192,6 +192,45 @@ both standard output and to one or more files:
 #+begin_src bash
   ls /usr/bin | tee ls.txt | grep zip
 #+end_src
+* Chapter 7. Seeing the world as the shell sees it
+Expansion and quoting are arguably the most important subjects to
+learn about the shell.
+- Expansion
+  - Pathname Expansion
+    - ~echo D*~
+    - ~echo /usr/*/share~
+  - Tilde Expansion
+    - ~echo ~~
+    - ~echo ~foo~
+  - Arithmetic Expansion
+    - ~echo $((2 + 2))~
+    - ~echo $(($((5**2)) * 3))~ or ~echo $(((5**2) * 3))~
+  - Brace Expansion
+    - ~echo Front-{A,B,C}-Back~ --> Front-A-Back Front-B-Back Front-C-Back
+    - ~echo Number_{1...5}~ --> Number_1 Number_2 Number_3 Number_4 Number_5
+    - ~mkdir {2007..2009}-{01..12}~
+  - Parameter Expansion
+    - ~echo $USER~
+  - Command Substitution
+    - ~echo $(ls)~
+    - ~ls -l $(which cp)~
+    - ~file $(ls -d /usr/bin/* | grep zip)~
+    - Instead of dollar sign and parenthesis you can use an older
+      syntax: backquotes. E.g.: ~ls -l `which cp`~
+- Quoting
+  - Double quotes: within them all special characters lose their
+    special meaning, except for `$', `\' and ``'. That is, parameter
+    expansion, arithmetic expansion and command substitution still
+    work.
+    - ~ls -l "two words.txt"~
+    - ~echo "$USER $((2+2)) $(cal)"~
+    - Can you tell why ~echo $(cal)~ and ~echo "$(cal)"~ do different
+      things? ... (p.69)
+  - single quotes: all expansion is suppressed.
+  - Escaping
+    - ~echo "The balance for user $USER is: \$5.00"~
+    - ~sleep 10; echo -e "Time's up\a"~
+    - ~sleep 10; echo -e Time's up $'\a'~
 * Chapter 10. Processes
 Modern operating systems create the /illusion/ of doing more than one
 thing at once, by rapidly switching from one executing program to
