@@ -231,84 +231,128 @@ learn about the shell.
     - ~echo "The balance for user $USER is: \$5.00"~
     - ~sleep 10; echo -e "Time's up\a"~
     - ~sleep 10; echo -e Time's up $'\a'~
+* Chapter 8. Advanced Keyboard Tricks
+[...]
+* Chapter 9. Permissions
+- Unix is a multiuser system.
+
+- ~id~
+
+- Access rights are defined in terms of
+  - read access;
+  - write access;
+  - execution access.
+
+- ~chmod~
+  - Octal number representation
+    - ~chmod 600 foo.txt~
+  - Symbolic representation
+
+- ~umask~
+
 * Chapter 10. Processes
-Modern operating systems create the /illusion/ of doing more than one
-thing at once, by rapidly switching from one executing program to
-another. This is achieved through the kernel's management of
-/processes/. Processes are how Linux organizes the different programs
-waiting for their turn at the CPU.
+- Modern operating systems are (usually) /multitasking/: they create
+  the /illusion/ of doing more than one thing at once. They do so by
+  rapidly switching from one executing program to another. This is
+  achieved through the kernel's management of /processes/. Processes
+  are how Linux organizes the different programs waiting for their
+  turn at the CPU.
 
-Parent process / child process.
+- When a system starts up the kernls starts some processes and
+  launches the program ~init~. ~init~ runs a series of scripts
+  (so-called ~init scripts~, located in ~/etc~), many of which are
+  /daemon programs/.
 
-PID: PIDs are assigned in ascending order. init is 1.
+- /parent process/ --> /child process/.
 
-Like files, processes have owners, user IDS, etc.
+- Each process is assigned a number called PID (process ID). PIDs are
+  assigned in ascending order. ~init~'s PID is always 1.
+
+- Like files, processes have owners and user IDs, etc.
 ** Viewing Process
-#+begin_src bash
-  ps
-#+end_src
+- ~ps~
 
-Will give us:
+E.g.:
 #+begin_src bash
-  PID TTY          TIME CMD
-  25621 pts/6    00:00:00 bash
+  [user]$ ls
+    PID  TTY          TIME CMD
+   25621 pts/6    00:00:00 bash
   101436 pts/6    00:00:00 ps
 #+end_src
 
-TTY: the controlling terminal for the process.
-TIME: the amount of CPU time consumed by the process.
+- ~ps~, by default, does not show very much... it shows only the
+  processes associated with the current terminal session.
 
-Bigger picture:
-#+begin_src bash
-  ps x
-#+end_src
+- TTY: the controlling terminal for the process.
+- TIME: the amount of CPU time consumed by the process.
 
-#+begin_src bash
-  PID TTY      STAT   TIME COMMAND
-  474 ?        Ss     0:00 /usr/lib/systemd/systemd --user
-  475 ?        S      0:00 (sd-pam)
-  482 tty1     Ss     0:00 -bash
-  504 tty1     S+     0:00 xinit -- vt01
-  505 tty1     Sl    94:57 /usr/lib/Xorg :0 vt01
-  510 tty1     Sl    47:30 emacs -l /home/gp/.emacs.d/init-exwm.el
-  513 ?        Ssl    0:23 emacs --daemon
-#+end_src
-STAT: the current status of the project.
+- If we add the option ~x~, we tell ~ps~ to show also the process that
+  are not controlled by the terminal we are currently using.
+  #+begin_src bash
+    [user]$ ps x
+    PID TTY      STAT   TIME COMMAND
+    474 ?        Ss     0:00 /usr/lib/systemd/systemd --user
+    475 ?        S      0:00 (sd-pam)
+    482 tty1     Ss     0:00 -bash
+    504 tty1     S+     0:00 xinit -- vt01
+    505 tty1     Sl    94:57 /usr/lib/Xorg :0 vt01
+    510 tty1     Sl    47:30 emacs -l /home/gp/.emacs.d/init-exwm.el
+    513 ?        Ssl    0:23 emacs --daemon
+  #+end_src
+- ~?~ means no controlling terminal.
+
+- STAT: the current status of the project.
 
 - Process states:
-  - R ...
-  - S ...
-  - T ...
-  - Z ...
-  - < ...
-  - N ...
+  - ~R~: running;
+  - ~S~: sleeping; waiting for an event;
+  - ~D~: Uninterruptible sleep; waiting for I/O;
+  - ~T~: Stopped;
+  - ~Z~: A defunct of ``zombie'' process; terminated by not cleaned up
+    by its parent;
+  - ~<~: A high-priority process. A process with high priority is said
+    to be ``less nice'' because it takes more of the CPU's time.
+  - ~N~: A low-priority process (a nice process). A process that gets
+    processor time only after other processes with higher priority
+    have been serviced.
 
-Seeing more info:
-#+begin_src bash
-  ps aux
-#+end_src
-- We can now see:
-  - USER ...
-  - %CPU  ...
-  - %MEM  ...
-  - VSZ  ...
-  - RSS  ...
-  - START  ...
+- To seeing more info:
+  #+begin_src bash
+    ps aux
+  #+end_src
+  - We can now see:
+    - ~USER~: User ID, the owner of the process;
+    - ~%CPU~: CPU usage;
+    - ~%MEM~: Memory usage;
+    - ~VSZ~: Virtual memory size;
+    - ~RSS~: Resident set size --- the amount of RAM the process is
+      using in kilobytes;
+    - ~START~: Time when the process started.
 ** Viewing processes dynamically
-#+begin_src bash
-  top
-#+end_src
 ~top~ shows a system summary and a table of processes sorted by CPU
 activity.
 ** Controlling Processes
+xlogos is a program that shows a resizable window cotaining an X.  We
+can start it with the ~xlogo~ command. Now, notice that the shell
+prompt has not returned. The shell is waiting for the program to
+finish. Close the xlogo window and you'll see that the prompt will
+return. We can interrupt xlogo also with Ctrl-c. If you start xlogo
+and then press Ctrl-c the programm will be interrupted. The xlogo
+window closes and the prompt returns.
+
+However, we can get the prompt back without terminating xlogo: ~xlogo
+&~. If the command is followd by an ampersand, then the program is
+placed in the /background/. The shell, before returning the prompt,
+will print some numbers to tell us the job number and his PID. This is
+part of a shell feature called /job control/.
+
 #+begin_src bash
-xlogo &
+  [foo@bar]$ xlogo &
+  [1] 103880
+  [foo@bar]$
 #+end_src
-If we run
-#+begin_src bash
-  ps
-#+end_src
-now we get:
+
+If we now run ~ps~ we get:
 #+begin_src bash
  PID TTY          TIME CMD
  101522 pts/8    00:00:00 bash
@@ -316,27 +360,24 @@ now we get:
  103917 pts/8    00:00:00 ps
 #+end_src
 
-With jobs we can see the list of jobs that have been launched from our terminal:
-#+begin_src bash
-  jobs
-#+end_src
+With ~jobs~ we can see the list of jobs that have been launched from
+our terminal:
 #+begin_src bash
   [1]+  Running                 xlogo &
 #+end_src
-To return xlogo to the foreground:
-#+begin_src bash
-  fg %1
-#+end_src
+We can make xlogo return to the foreground: ~fg %1~.
 
-We can stop a process with ~Ctrl-z~ (the program will thereby go in
-the background).
+We can /stop/ a process with ~Ctrl-z~ (the program will thereby go in
+the background). The program is not running (try to resize the xlogo
+window.)
 
 Once we have stopped a process we can continue its execution in the
-foreground by using ~fg~, or resume its execution in the background with ~bg~.
+foreground by using ~fg~, or resume its execution in the background
+with ~bg~.
 ** Signals
 ~kill~ can be used to terminate a process.
 
-You can pass to ~kill~ the PID but also the jobspec (for exampl, %1).
+You can pass to ~kill~ the PID but also the jobspec (for example, %1).
 
 More precisely, ~kill~ does really ``kill'' a process; it sends a
 /signal/ to it. Signals one of the way in which the operating system
