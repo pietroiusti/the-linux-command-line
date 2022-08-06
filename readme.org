@@ -383,7 +383,7 @@ More precisely, ~kill~ does really ``kill'' a process; it sends a
 /signal/ to it. Signals one of the way in which the operating system
 communicates with programs.
 
-Actually we have already used signals with we have used Ctrl-c and
+Actually we have already used signals when we have used Ctrl-c and
 Ctrl-z. In those cases, the terminal receives the keystrokes and sends
 a signal to the program in the foreground. In the case of Ctrl-C, INT
 (interrupt) is sent. In the case of Ctrl-z, TSTP (terminal stop) is
@@ -418,6 +418,46 @@ killall [-u user] [-signal] name...
   - vmstat
   - xload
   - tload
+* Chapter 11. The Environment
+- Environment variables
+
+- Shell variables
+
+- ~printenv~: show environment variables.
+
+- ~printenv USER~: print the value of the specific variable USER.
+
+- ~set~: show both environment variables and shell variables, as well
+  as any define shell functions.
+
+- ~echo $USER~: print the value of the specific variable USER.
+
+- ~alias~: show aliases.
+
+- When we log on to the system, bash starts and reads a series of
+  configuration scripts called /startup files/, which define the
+  environment for all users. After that other startup files are read
+  in the home directory which define the specific enviroment of the
+  user.
+
+- The exactly sequence of what is executed by bash depends on the kind
+  of shell session being started. There are two types of shell
+  sessions:
+  - Login shell session
+    - Startup files:
+      - ~/etc/profile~
+      - ~~/.bash_profile~
+      - ~~/.bash_login~
+      - ~~/.profile~
+  - Non-login shell session.
+    - Startup files:
+      - ~/etc/bash.bashrc~
+      - ~~/.bashrc~
+
+- As a general rule, to add directories to the PATH or define other
+  environment variables, one changes the ~.bash_profile~ file (or
+  equivalent file. Ubuntu uses ~.profile~). The rest goes in the
+  ~.bashrc~ file.
 * Chapter 24. Writing Your First Script
 Save hello_world in ~/bin/:
 
