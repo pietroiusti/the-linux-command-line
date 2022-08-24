@@ -459,6 +459,13 @@ killall [-u user] [-signal] name...
   equivalent file. Ubuntu uses ~.profile~). The rest goes in the
   ~.bashrc~ file.
 * Chapter 24. Writing Your First Script
+The shell is somewhat is both a command line interface to the system
+and a scripting language interpreter.
+
+Most of the things that can be done on the command line can be done in
+scripts. Most of the things that can be done in scripts can be done on
+the command line.
+
 Save hello_world in ~/bin/:
 
 #+begin_src bash
@@ -467,6 +474,7 @@ Save hello_world in ~/bin/:
   echo 'Hello world'
 #+end_src
 
+Make the script executable:
 #+begin_src bash
   chmod 755 hello_world
 #+end_src
@@ -489,12 +497,143 @@ their name. ~/bin is a good place for script intended for personal
 use.
 
 ~/usr/local/bin is a standard place for scripts that are intended for
-everyone to use them.
+everyone to use.
 
 System administrators often put their scripts in /usr/bin/sbin.
 
 ``Locally supplied software'' is usually in the /usr/local hierarchy.
-* Chapter 25.
+* Chapter 25. Starting a Project
+~sys_info_page~ file:
+#+begin_src bash
+  #!/bin/bash
+
+  # Program to output a system information page
+
+  echo "<html>"
+  echo "  <head>"
+  echo "    <title>Page Title</title>"
+  echo "  </head>"
+  echo "  <body>"
+  echo "    Page body."
+  echo "  </body>"
+  echo "</html>"
+#+end_src
+
+We can run it and redirect the output to a file so that we can see the
+result in a web browser:
+#+begin_src bash
+  sys_info_page > sys_info_page.html
+#+end_src
+
+Given that quoted strings can contain new lines --- try on the command
+line; it works ---, we can combine the echo commands into one:
+#+begin_src bash
+  #!/bin/bash
+
+  # Program to output a system information page
+
+  echo "<html>
+        <head>
+          <title>Page Title</title>
+        </head>
+        <body>
+          Page body.
+        </body>
+</html>"
+#+end_src
+
+Let's use a variable and use its value:
+#+begin_src bash
+  #!/bin/bash
+
+  # Program to output a system information page
+
+  title="System Information Report"
+
+  echo "<html>
+  <head>
+      <title>$title</title>
+  </head>
+
+  <body>
+      <h1>$title</h1>
+  </body>
+  </html>"
+#+end_src
+A command like ~echo $foo~ undergoes /parameter expansion/. If
+the value of the variable ~foo~ is the string "bar", then the command
+will expand to ~echo bar~. Empty variable expand to nothing.
+
+A common convention is writing constants in uppercase and normal
+variables in lowercase.
+
+#+begin_src bash
+  #!/bin/bash
+
+  # Program to output a system information page
+
+  TITLE="System Information Report For $HOSTNAME"
+
+  echo "<html>
+  <head>
+      <title>$TITLE</title>
+  </head>
+  <body>
+      <h1>$TITLE</h1>
+  </body>
+  </html>"
+#+end_src
+
+Examples of variable assignment:
+#+begin_src bash
+  a=z                  # Assign the string "z" to variable a.
+
+  b="a string"         # Embedded spaces must be within quotes.
+
+  c="a string and $b"  # Other expansions such as variables can be
+                       # expanded into the assignment.
+
+  d="$(ls -l foo.txt)" # Results of a command.
+
+  e=$((5 * 7))         # Arithmetic expansion.
+
+  f="\t\ta string\n"   # Escape sequences such as tabs and newlines.
+
+  g="${filename}1"     # the trailing 1 is not taken as part of the
+                       # variable
+#+end_src
+
+Let's add some data to our program:
+#+begin_src bash
+  #!/bin/bash
+
+  # Program to output a system information page
+
+  TITLE="System Information Report For $HOSTNAME"
+  CURRENT_TIME="$(date +"%x %r %Z")"
+  TIMESTAMP="Generated $CURRENT_TIME, by $USER"
+
+  echo "<html>
+  <head>
+      <title>$TITLE</title>
+  </head>
+  <body>
+      <h1>$TITLE</h1>
+      <p>$TIMESTAMP</p>
+  </body>
+  </html>"
+#+end_src
+
+We have seen two ways to output text using ~echo~. There is a third
+way: /here document/ (or /here script/). It works like this:
+#+begin_src bash
+  command << token
+  text
+  token
+#+end_src
+~command~ is the name of the command that accepts standard input
+(which we feed with ~text~) and ~token~ is a string used to indicated
+the end of the embedded text. Let's use a here document in our script!
 #+begin_src bash
   #!/bin/bash
 
@@ -516,55 +655,195 @@ System administrators often put their scripts in /usr/bin/sbin.
   </html>
   _EOF_
 #+end_src
+Single and double quotes within here documents lose their special
+meaning to the shell. This can turn out to be handy.
+
+Another example:
+#+begin_src bash
+  #!/bin/bash
+
+  # Script to retrieve a file via FTP
+
+  FTP_SERVER=ftp.nl.debian.org FTP_PATH=/debian/dists/stretch/main/installer-
+  amd64/current/images/cdrom REMOTE_FILE=debian-cd_info.tar.gz
+
+  ftp -n << _EOF_
+  open $FTP_SERVER
+  user anonymous me@linuxbox
+  cd $FTP_PATH
+  hash
+  get $REMOTE_FILE
+  bye
+  _EOF_
+  ls -l "$REMOTE_FILE"
+#+end_src
+
 * Chapter 26
 #+begin_quote
 Top-down design is a common method of designing programs and one that
 is well suited to shell programming in particular.
 #+end_quote
 
+Let's add to our scripts three commands that yet have to be
+implemented:
 #+begin_src bash
   #!/bin/bash
+
   # Program to output a system information page
+
   TITLE="System Information Report For $HOSTNAME"
   CURRENT_TIME="$(date +"%x %r %Z")"
   TIMESTAMP="Generated $CURRENT_TIME, by $USER"
-  report_uptime () {
-      cat <<- _EOF_
-              <h2>System Uptime</h2>
-              <pre>$(uptime)</pre>
-              _EOF_
-      return
-  }
-  report_disk_space () {
-      cat <<- _EOF_
-              <h2>Disk Space Utilization</h2>
-              <pre>$(df -h)</pre>
-              _EOF_
-      return
-  }
-  report_home_space () {
-      cat <<- _EOF_
-              <h2>Home Space Utilization</h2>
-              <pre>$(du -sh /home/*)</pre>
-              _EOF_
-      return
-  }
+
   cat << _EOF_
   <html>
-    <head>
+  <head>
       <title>$TITLE</title>
-    </head>
-    <body>
+  </head>
+  <body>
       <h1>$TITLE</h1>
       <p>$TIMESTAMP</p>
       $(report_uptime)
       $(report_disk_space)
       $(report_home_space)
-    </body>
+  </body>
   </html>
   _EOF_
 #+end_src
-* Chapter 27
+The gap represented by the missing commands can be filled in two ways:
+we could write separate scripts --- a place them in a directory listed
+in PATH --- or we could write /shell functions/ within our script.
+
+#+begin_src bash
+  #!/bin/bash
+
+  # Program to output a system information page
+
+  TITLE="System Information Report For $HOSTNAME"
+  CURRENT_TIME="$(date +"%x %r %Z")"
+  TIMESTAMP="Generated $CURRENT_TIME, by $USER"
+
+  report_uptime () {
+  cat <<- _EOF_
+          <h2>System Uptime</h2>
+          <pre>$(uptime)</pre>
+          _EOF_
+      return
+  }
+
+  report_disk_space () {
+  cat <<- _EOF_
+          <h2>Disk Space Utilization</h2>
+          <pre>$(df -h)</pre>
+          _EOF_
+  return
+  }
+
+  report_home_space () {
+  cat <<- _EOF_
+          <h2>Home Space Utilization</h2>
+          <pre>$(du -sh /home/*)</pre>
+          _EOF_
+  return
+  }
+  cat << _EOF_
+  <html>
+  <head>
+  <title>$TITLE</title>
+  </head>
+  <body>
+      <h1>$TITLE</h1>
+      <p>$TIMESTAMP</p>
+      $(report_uptime)
+      $(report_disk_space)
+      $(report_home_space)
+  </body>
+  </html>
+  _EOF_
+#+end_src
+* Chapter 27. Flow Control: Branching with if.
+#+begin_src bash
+  x=5
+
+  if [ "$x" -eq 5 ]; then
+      echo "x equals 5."
+  else
+      echo "x does not equal 5."
+  fi
+#+end_src
+
+#+begin_src bash
+  if [ "$?" -eq 0 ]; then echo "last command's exit status was 0"; else echo "last command's exit status was not 0. It was $?"; fi
+#+end_src
+
+Saying:
+#+begin_src bash
+  test expression
+#+end_src
+is the same as saying:
+#+begin_src bash
+  [ expression ]
+#+end_src
+
+They are both commands. They support a wide range of expressions:
+| Expression      | is true if:                                  |
+|-----------------+----------------------------------------------|
+| file1 -ef file2 | file1 and file2 have the same inode numbers  |
+|                 | (the two filenames refer to the same file    |
+|                 | by hard linking)                             |
+|-----------------+----------------------------------------------|
+| file1 -nt file2 | file1 is newer than file2                    |
+|-----------------+----------------------------------------------|
+| file1 -ot file2 | file1 is older than file2                    |
+|-----------------+----------------------------------------------|
+| -b file         | file exists and is a block-special (device)  |
+|                 | file.                                        |
+|-----------------+----------------------------------------------|
+| -c file         | file exists and is a character-special       |
+|                 | (device) file.                               |
+|-----------------+----------------------------------------------|
+| -d file         | file exists and is a directory               |
+|-----------------+----------------------------------------------|
+| -e file         | file exists                                  |
+|-----------------+----------------------------------------------|
+| -f file         | file exists and is a regular file            |
+|-----------------+----------------------------------------------|
+| -g file         | file exists and is set-group-ID.             |
+|-----------------+----------------------------------------------|
+| -G file         | file exists and is owned by the effective    |
+|                 | group ID                                     |
+|-----------------+----------------------------------------------|
+| -k file         | file exists and has its ``sticky bit'' set   |
+|-----------------+----------------------------------------------|
+| -L file         | file exists and is a symbolic link           |
+|-----------------+----------------------------------------------|
+| -O file         | file exists and is owned by the effective    |
+|                 | user ID                                      |
+|-----------------+----------------------------------------------|
+| -p file         | file exists and is a named pipe              |
+|-----------------+----------------------------------------------|
+| -r file         | file exists and is readable (has readable    |
+|                 | permission for the effective user)           |
+|-----------------+----------------------------------------------|
+| -s file         | file exists and has a length greater than    |
+|                 | zero                                         |
+|-----------------+----------------------------------------------|
+| -S file         | file exists and is a network socket          |
+|-----------------+----------------------------------------------|
+| -t fd           | fd is a file descriptor directed to/from the |
+|                 | terminal. This can be used to determine      |
+|                 | whether standard input/output/error is being |
+|                 | redirected                                   |
+|-----------------+----------------------------------------------|
+| -u file         | file exists and is setuid                    |
+|-----------------+----------------------------------------------|
+| -w file         | file exists and is writable (has write       |
+|                 | permission for the effective user)           |
+|-----------------+----------------------------------------------|
+| -x file         | file exists and is executable (has           |
+|                 | execute/search permission for the effective  |
+|                 | user                                         |
+
 #+begin_src bash
   #!/bin/bash
 
@@ -627,6 +906,29 @@ As a function it would have been:
   }
 #+end_src
 
+Expressions to evaluate strings:
+| Expression           | Is true if:                                        |
+|----------------------+----------------------------------------------------|
+| ~string~             | ~string~ is not null                               |
+|----------------------+----------------------------------------------------|
+| ~-n string~          | The length of ~string~ is greater than zero        |
+|----------------------+----------------------------------------------------|
+| ~-z string~          | The length of ~string~ is zero                     |
+|----------------------+----------------------------------------------------|
+| ~string1 = string2~  | ~string1~ and ~string2~ are equal. Single or       |
+| ~string1 == string2~ | double equal signs may be used. The use of         |
+|                      | double quotes is greatly preferred [gp: by whom?], |
+|                      | but is not POSIX compliant.                        |
+|----------------------+----------------------------------------------------|
+| ~string != string2~  | ~string1~ and ~string2~ are not equal.             |
+|----------------------+----------------------------------------------------|
+| ~string1 > ~string2~ | ~string1~ sorts after ~string2~.                   |
+|----------------------+----------------------------------------------------|
+| ~string1 < string2~  | ~string1~ sorts before ~string2~.                  |
+
+(Careful with ~>~ and ~<~: they must be quoted when used with ~test~,
+otherwise they will be taken as meaning redirection...)
+
 #+begin_src bash
   #!/bin/bash
 
@@ -649,6 +951,23 @@ As a function it would have been:
       echo "The answer is UNKNOWN."
   fi
 #+end_src
+
+Expressions to evaluate integers:
+| Expression              | Is true if                             |
+|-------------------------+----------------------------------------|
+| ~integer1 -eq integer2~ | ~integer1~ is equal to ~integer2~      |
+|-------------------------+----------------------------------------|
+| ~integer1 -ne integer2~ | ~integer1~ is not equal to ~integer2~  |
+|-------------------------+----------------------------------------|
+| ~integer1 -le integer2~ | ~integer1~ is less than or equal to    |
+|                         | ~integer2~                             |
+|-------------------------+----------------------------------------|
+| ~integer1 -lt integer2~ | ~integer1~ is less than ~integer2~     |
+|-------------------------+----------------------------------------|
+| ~integer1 -ge integer2~ | ~integer1~ is greater than or equal to |
+|                         | ~integer2~                             |
+|-------------------------+----------------------------------------|
+| ~integer1 -gt integer2~ | ~integer1~ is greater than ~integer2~  |
 
 #+begin_src bash
   #!/bin/bash
@@ -678,8 +997,19 @@ As a function it would have been:
   fi
 #+end_src
 
-Using a regular expression to limit the value of INT to strings that
-are whole numers only:
+Moder versions of ~bash~ allow for the following syntax:
+#+begin_src bash
+  [[ expression ]]
+#+end_src
+The ~[[ ]]~ command is like ~test~ but it add a new string expression:
+#+begin_src bash
+  string1 =~ regex
+#+end_src
+The above expression returns true if ~string1~ is matched by the
+regex.
+
+Example of using a regular expression to limit the value of INT to
+strings that are whole numers only:
 #+begin_src bash
   #!/bin/bash
   # test-integer2: evaluate the value of an integer.
@@ -705,7 +1035,18 @@ are whole numers only:
   fi
 #+end_src
 
-Using (( )):
+~[[ ]]~ also makes the ~==~ operator support pattern matching the
+sayme way pathname expasion does:
+#+begin_src bash
+  [me@linuxbox ~]$ FILE=foo.bar
+  [me@linuxbox ~]$ if [[ $FILE == foo.* ]]; then
+  > echo "$FILE matches pattern 'foo.*'"
+  > fi
+  foo.bar matches pattern 'foo.*'
+#+end_src
+
+Bash also provides the ~(( ))~ compound command; useful when operating
+with integers:
 #+begin_src bash
   #!/bin/bash
 
@@ -734,6 +1075,16 @@ Using (( )):
   fi
 #+end_src
 
+Expressions can be combined by using *logical operators*:
+| Operation | test | [[]] and (()) |
+|-----------+------+---------------|
+| AND       | -a   | &&            |
+|-----------+------+---------------|
+| OR        | -o   | \vert\vert    |
+|-----------+------+---------------|
+| NOT       | !    | !             |
+
+For example:
 #+begin_src bash
   #!/bin/bash
 
@@ -765,6 +1116,7 @@ We could alternatively have said:
   fi
 #+end_src
 
+Another example:
 #+begin_src bash
   #!/bin/bash
 
@@ -788,7 +1140,7 @@ We could alternatively have said:
   fi
 #+end_src
 
-Using test would have been like that:
+Using ~test~ would have been like that:
 #+begin_src bash
   if [ ! \( "$INT" -ge "$MIN_VAL" -a "$INT" -le "$MAX_VAL" \) ]; then
       echo "$INT is outside $MIN_VAL to $MAX_VAL."
@@ -796,6 +1148,10 @@ Using test would have been like that:
       echo "$INT is in range."
   fi
 #+end_src
+
+Remember ~test~ is traditional and part of the POSIX
+specification. ~[[ ]]~ is specific to bash. You might prefer one over
+the other depending on the context.
 * Chapter 28
 #+begin_src bash
   #!/bin/bash
