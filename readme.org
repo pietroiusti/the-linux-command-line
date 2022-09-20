@@ -776,7 +776,9 @@ in PATH --- or we could write /shell functions/ within our script.
   if [ "$?" -eq 0 ]; then echo "last command's exit status was 0"; else echo "last command's exit status was not 0. It was $?"; fi
 #+end_src
 
-Saying:
+We have just used the command ~test~. Well, we have used a notation
+that does not actually involves writing `test`. There are two
+syntaxes.  Saying:
 #+begin_src bash
   test expression
 #+end_src
@@ -1036,7 +1038,7 @@ strings that are whole numers only:
 #+end_src
 
 ~[[ ]]~ also makes the ~==~ operator support pattern matching the
-sayme way pathname expasion does:
+same way pathname expansion does:
 #+begin_src bash
   [me@linuxbox ~]$ FILE=foo.bar
   [me@linuxbox ~]$ if [[ $FILE == foo.* ]]; then
@@ -1152,7 +1154,16 @@ Using ~test~ would have been like that:
 Remember ~test~ is traditional and part of the POSIX
 specification. ~[[ ]]~ is specific to bash. You might prefer one over
 the other depending on the context.
-* Chapter 28
+* Chapter 28: Reading Keyboard Input
+~read~ (builtin command) is used to read a single line of standard
+input (so it can be used to read keyboard input as well as a line of
+data from a file when redirection is used).
+
+This is the syntax:
+#+begin_src bash
+  read [-options] [variable...}
+#+end_src
+
 #+begin_src bash
   #!/bin/bash
 
@@ -1208,13 +1219,28 @@ the other depending on the context.
   echo "REPLY = '$REPLY'"
 #+end_src
 
+- ~read~ options:
+  - ~- a array~: assign the input to ~array~, starting with index zero.
+  - ~-d delimiter~: indicate the character used for the end of input.
+  - ~-e~: use Readline to handle input.
+  - ~-i string~: Use ~string~ as a default reply if the user simply
+    presses Enter. It requires the ~-e~ option.
+  - ~-n num~: Read ~num~ characters of input.
+  - ~-p prompt~: display custom prompt.
+  - ~-r~: raw mode; backlash is not interpreted as an escape.
+  - ~-s~: silent mode; no echoing back when typing. Useful for
+    password.
+  - ~-t seconds~: timeout
+  - ~-u fd~: use input from file descriptor ~fd~, rather than standard
+    input.
+
 Using the -p option:
 #+begin_src bash
   #!/bin/bash
 
   # read-single: read multiple values into default variable
 
-  read -p "Enter one or more values > "e
+  read -p "Enter one or more values > "
 
   echo "REPLY = '$REPLY'"
 #+end_src
@@ -1255,8 +1281,8 @@ Here is a working solution:
   echo "You answered: '$REPLY'"
 #+end_src
 
-Reading the content of ~/etc/passwd~ by changing the value of IFS and
-``here strings'':
+Reading the content of ~/etc/passwd~ by changing the value of IFS
+(only temporarily) and using a ``here strings'':
 #+begin_src bash
   #!/bin/bash
 
@@ -1266,7 +1292,7 @@ Reading the content of ~/etc/passwd~ by changing the value of IFS and
 
   read -p "Enter a username > " user_name
 
-  file_info="$(grep "$^user_name:" $FILE)"
+  file_info="$(grep "^$user_name:" $FILE)"
 
   if [ -n "$file_info" ]; then
       IFS=":" read user pw uid gid name home shell <<< "$file_info"
@@ -1281,6 +1307,18 @@ Reading the content of ~/etc/passwd~ by changing the value of IFS and
       exit 1
   fi
 #+end_src
+
+We are using a /here string/. A here string is like a here document,
+but consisting of a single  string.
+
+Why aren't we echoing the content of ~file_info~ into ~read~? Well,
+while the ~read~ command normally takes input from standard input, you
+cannot do the following:
+#+begin_src bash
+  echo "foo" | read
+#+end_src
+Because pipelines create /subshells/...(p. 370).
+
 * Chapter 29
 #+begin_src bash
   #!/bin/bash
@@ -1301,4 +1339,14 @@ Reading the content of ~/etc/passwd~ by changing the value of IFS and
   continue
 
   break
+#+end_src
+
+~until~ creates a loop that continues until it receives a zero exit
+status. The condition:
+#+begin_src bash
+  while [[ "$count" -le 5 ]]; do...
+#+end_src
+can then be written in the following way too:
+#+begin_src bash
+  until [[ "$count" -gt 5 ]]; do...
 #+end_src
