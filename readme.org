@@ -909,24 +909,24 @@ As a function it would have been:
 #+end_src
 
 Expressions to evaluate strings:
-| Expression           | Is true if:                                        |
-|----------------------+----------------------------------------------------|
-| ~string~             | ~string~ is not null                               |
-|----------------------+----------------------------------------------------|
-| ~-n string~          | The length of ~string~ is greater than zero        |
-|----------------------+----------------------------------------------------|
-| ~-z string~          | The length of ~string~ is zero                     |
-|----------------------+----------------------------------------------------|
-| ~string1 = string2~  | ~string1~ and ~string2~ are equal. Single or       |
-| ~string1 == string2~ | double equal signs may be used. The use of         |
-|                      | double quotes is greatly preferred [gp: by whom?], |
-|                      | but is not POSIX compliant.                        |
-|----------------------+----------------------------------------------------|
-| ~string != string2~  | ~string1~ and ~string2~ are not equal.             |
-|----------------------+----------------------------------------------------|
-| ~string1 > ~string2~ | ~string1~ sorts after ~string2~.                   |
-|----------------------+----------------------------------------------------|
-| ~string1 < string2~  | ~string1~ sorts before ~string2~.                  |
+| Expression           | Is true if:                                             |
+|----------------------+---------------------------------------------------------|
+| ~string~             | ~string~ is not null                                    |
+|----------------------+---------------------------------------------------------|
+| ~-n string~          | The length of ~string~ is greater than zero             |
+|----------------------+---------------------------------------------------------|
+| ~-z string~          | The length of ~string~ is zero                          |
+|----------------------+---------------------------------------------------------|
+| ~string1 = string2~  | ~string1~ and ~string2~ are equal. Single or            |
+| ~string1 == string2~ | double equal signs may be used. The use of              |
+|                      | double equal signs is greatly preferred [gp: by whom?], |
+|                      | but is not POSIX compliant.                             |
+|----------------------+---------------------------------------------------------|
+| ~string != string2~  | ~string1~ and ~string2~ are not equal.                  |
+|----------------------+---------------------------------------------------------|
+| ~string1 > ~string2~ | ~string1~ sorts after ~string2~.                        |
+|----------------------+---------------------------------------------------------|
+| ~string1 < string2~  | ~string1~ sorts before ~string2~.                       |
 
 (Careful with ~>~ and ~<~: they must be quoted when used with ~test~,
 otherwise they will be taken as meaning redirection...)
@@ -1319,7 +1319,7 @@ cannot do the following:
 #+end_src
 Because pipelines create /subshells/...(p. 370).
 
-* Chapter 29
+* Chapter 29. Flow Control: Looping with while/until
 #+begin_src bash
   #!/bin/bash
 
@@ -1350,3 +1350,6 @@ can then be written in the following way too:
 #+begin_src bash
   until [[ "$count" -gt 5 ]]; do...
 #+end_src
+
+* Chapter 30. Troubleshooting
+[...]
